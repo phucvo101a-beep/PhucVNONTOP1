@@ -493,7 +493,7 @@ def update_readme(readme: Path, status: str) -> None:
     pattern = re.compile(re.escape(start) + r".*?" + re.escape(end), re.DOTALL)
     replacement = f"{start}\n{status.rstrip()}\n{end}"
     if not pattern.search(text):
-        raise ValueError(f"README is missing {start}/{end} markers")
+        return
     readme.write_text(pattern.sub(replacement, text, count=1), encoding="utf-8")
 
 

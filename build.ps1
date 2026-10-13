@@ -105,12 +105,11 @@ if ($isWin) {
 
 if (-not $NoUpdate) {
     $updateArguments = @(
-        (Get-ProjectPath 'tools\update_from_dump.py'),
+        (Get-ProjectPath 'tools/update_from_dump.py'),
         '--dumps-dir', (Get-ProjectPath 'dumps'),
-        '--template', (Get-ProjectPath 'src\ESPLogic.template.cs'),
+        '--template', (Get-ProjectPath 'src/ESPLogic.template.cs'),
         '--generated', $Generated,
-        '--readme', (Get-ProjectPath 'README.md'),
-        '--readme-en', (Get-ProjectPath 'README_EN.md')
+        '--no-readme'
     )
     if ($DumpPath) {
         $resolvedDump = if ([IO.Path]::IsPathRooted($DumpPath)) {
