@@ -60,6 +60,7 @@ jobs:
         shell: pwsh
         run: |
           ./build.ps1 -KeepBuildArtifacts
+          # Extract version and hash from manifest
           $manifest = Get-Content -LiteralPath dist/Assembly-CSharp-patch.manifest.json -Raw | ConvertFrom-Json
           echo "patch_sha256=$($manifest.sha256)" >> $env:GITHUB_OUTPUT
           echo "game_version=$($manifest.game_version)" >> $env:GITHUB_OUTPUT
@@ -103,9 +104,11 @@ jobs:
           echo "=== Creating IPA directory structure ==="
           mkdir -p Payload/GameApp.app/Data/Managed
 
+          # Copy the patch bytes into the app bundle
           cp dist/Assembly-CSharp-patch.bytes \
              Payload/GameApp.app/Data/Managed/Assembly-CSharp-patch.bytes
 
+          # Copy manifest for reference
           cp dist/Assembly-CSharp-patch.manifest.json \
              Payload/GameApp.app/Data/Managed/patch-manifest.json
 
@@ -119,6 +122,7 @@ jobs:
           SHORT_HASH="${HASH:0:8}"
           IPA_NAME="ESP-Patch-v${VERSION}-${SHORT_HASH}.ipa"
 
+          # Create the .ipa (which is just a zip with Payload/)
           zip -r "${IPA_NAME}" Payload/
           echo "ipa_name=${IPA_NAME}" >> $GITHUB_ENV
           echo "=== IPA Created ==="
@@ -141,7 +145,7 @@ jobs:
           retention-days: 90
 
   # ---------------------------------------------------------------------------
-  # Job 3: Create GitHub Release
+  # Job 3 (optional): Create GitHub Release
   # ---------------------------------------------------------------------------
   release:
     name: Create Release
@@ -187,6 +191,12 @@ jobs:
             - ❌ No Recoil
             - ❌ Fast Parachute
             - ❌ Speed Running
+
+            ### How to install
+            1. Download the `.ipa` file
+            2. Use **AltStore**, **Sideloadly**, or **TrollStore** to sideload
+            3. Alternatively, use only the `.bytes` file to replace in an existing installation
+
           files: |
             release/*.ipa
             release/Assembly-CSharp-patch.bytes
