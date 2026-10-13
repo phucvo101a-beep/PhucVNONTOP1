@@ -214,24 +214,17 @@ foreach ($name in @('Mono.Cecil.dll', 'Mono.Cecil.Mdb.dll', 'Mono.Cecil.Pdb.dll'
     Copy-Item -LiteralPath (Join-Path $ThirdParty $name) -Destination $Build -Force
 }
 
-# Patch config: only Bootstrap (IsReallyInStealth) and Draw (OnGUI) are active.
-# The other 4 slots (SilentAim, AimSystem, FastMovementUpdate, ScatterRate) are
-# pass-through stubs but still required by the IFix compiler.
+# Patch config: ONLY Bootstrap (IsReallyInStealth) and Draw (OnGUI) are active.
+# All other methods (network, aim, recoil, movement) are completely untouched.
 $PatchConfig = Join-Path $Build 'patch-config.bin'
 $configStream = [IO.File]::Create($PatchConfig)
 $configWriter = New-Object IO.BinaryWriter($configStream)
 try {
-    $configWriter.Write([int]4)
+    $configWriter.Write([int]2)
 
     $configWriter.Write('COW.GamePlay.Player')
-    $configWriter.Write([int]3)
+    $configWriter.Write([int]1)
     $configWriter.Write('IsReallyInStealth')
-    $configWriter.Write('System.Boolean')
-    $configWriter.Write([int]0)
-    $configWriter.Write('get_LastAimingInfoFromWeapon')
-    $configWriter.Write('COW.GamePlay.' + [string]$bindingInfo.placeholders.AIM_INFO_TYPE)
-    $configWriter.Write([int]0)
-    $configWriter.Write('get_IsMovableEntity')
     $configWriter.Write('System.Boolean')
     $configWriter.Write([int]0)
 
@@ -239,22 +232,6 @@ try {
     $configWriter.Write([int]1)
     $configWriter.Write('OnGUI')
     $configWriter.Write('System.Void')
-    $configWriter.Write([int]0)
-
-    $configWriter.Write('COW.GamePlay.PlayerNetwork')
-    $configWriter.Write([int]1)
-    $configWriter.Write('OnUpdate')
-    $configWriter.Write('System.Void')
-    $configWriter.Write([int]2)
-    $configWriter.Write([bool]$false)
-    $configWriter.Write('System.Single')
-    $configWriter.Write([bool]$false)
-    $configWriter.Write('System.Single')
-
-    $configWriter.Write('COW.GamePlay.PlayerAttributes')
-    $configWriter.Write([int]1)
-    $configWriter.Write('GetScatterRate')
-    $configWriter.Write('System.Single')
     $configWriter.Write([int]0)
 
     for ($index = 0; $index -lt 4; $index++) {
@@ -287,17 +264,13 @@ if (-not $verification.valid -or @($verification.errors).Count -ne 0 `
     throw 'Generated patch did not pass strict VM verification.'
 }
 if ($report.magic -ne '0x66A319B20DB4A2CB' -or $report.remaining_bytes -ne 0 `
-    -or $methods.Count -ne 6 -or $redirects.Count -ne 6) {
+    -or $methods.Count -ne 2 -or $redirects.Count -ne 2) {
     throw 'Generated patch failed structural assertions.'
 }
 
 $expectedRedirects = @(
     'COW.GamePlay.Player|IsReallyInStealth',
-    'COW.GamePlay.SceneEditBoxSelectTool|OnGUI',
-    'COW.GamePlay.Player|get_LastAimingInfoFromWeapon',
-    'COW.GamePlay.Player|get_IsMovableEntity',
-    'COW.GamePlay.PlayerNetwork|OnUpdate',
-    'COW.GamePlay.PlayerAttributes|GetScatterRate'
+    'COW.GamePlay.SceneEditBoxSelectTool|OnGUI'
 )
 $actualRedirects = @($redirects | ForEach-Object {
     (($_.declaring_type -split ',')[0]) + '|' + $_.name
@@ -332,9 +305,7 @@ $requiredMethods = @(
     'WorldToScreenPoint', 'Distance', 'DrawTexture', 'Label',
     'get_whiteTexture', 'get_current', 'get_type', 'get_matrix', 'set_matrix',
     'get_color', 'set_color', 'TRS', 'Euler', 'Clamp', 'Contains', 'Use',
-    'get_mousePosition', 'get_delta', 'get_touchCount', 'get_unscaledTime',
-    '<>iFixBaseProxy_get_IsMovableEntity',
-    '<>iFixBaseProxy_OnUpdate', 'get_SkillScatterRate'
+    'get_mousePosition', 'get_delta', 'get_touchCount', 'get_unscaledTime'
 )
 $missingMethods = @($requiredMethods | Where-Object { $methodNames -notcontains $_ })
 if ($missingMethods.Count -ne 0) {
@@ -367,7 +338,6 @@ if ($missingStrings.Count -ne 0) {
 }
 
 $requiredFields = @(
-    [string]$bindingInfo.placeholders.PLAYER_AIM_INFO_FIELD,
     [string]$bindingInfo.placeholders.SCENE_MENU_FIELD,
     [string]$bindingInfo.placeholders.SCENE_POSITION_FIELD,
     [string]$bindingInfo.placeholders.SCENE_STATE_FIELD

@@ -51,15 +51,16 @@ class GeneratedSourceTests(unittest.TestCase):
 
     def test_menu_is_present(self) -> None:
         for value in (
-            "ESP CONTROL", "Silent aim", "Aim system", "No recoil",
-            "Fast parachute", "Speed running x3", "RESET DEFAULTS", "HIDE MENU",
+            "ESP CONTROL", "Enable ESP", "Player box", "Top tracer",
+            "Health bar", "Player name", "Distance", "RESET DEFAULTS", "HIDE MENU",
         ):
             self.assertIn(value, self.source)
         self.assertIn("Input.touchCount >= 3", self.source)
 
     def test_removed_features_are_absent(self) -> None:
         for value in (
-            "Fast reload", "Fake lag", "FastReloadStarted",
+            "Fast reload", "Fake lag", "Silent aim", "Aim system", "No recoil",
+            "Fast parachute", "Speed running", "FastReloadStarted",
             "FastImmediateReloadStarted", "SyncStatePosition", "GetSyncStatePos",
         ):
             self.assertNotIn(value, self.source)
@@ -88,10 +89,9 @@ class PatchTests(unittest.TestCase):
     def test_redirect_surface(self) -> None:
         redirects = self.patch["redirects"]
         names = {record["method"].name for record in redirects}
-        self.assertEqual(6, len(redirects))
+        self.assertEqual(2, len(redirects))
         self.assertEqual({
-            "IsReallyInStealth", "OnGUI", "get_LastAimingInfoFromWeapon",
-            "get_IsMovableEntity", "OnUpdate", "GetScatterRate",
+            "IsReallyInStealth", "OnGUI",
         }, names)
 
     def test_removed_features_are_absent(self) -> None:
@@ -103,6 +103,11 @@ class PatchTests(unittest.TestCase):
             self.assertNotIn(name, method_names)
         self.assertNotIn("Fast reload x3", self.patch["strings"])
         self.assertNotIn("Fake lag (fire)", self.patch["strings"])
+        self.assertNotIn("Silent aim", self.patch["strings"])
+        self.assertNotIn("Aim system", self.patch["strings"])
+        self.assertNotIn("No recoil", self.patch["strings"])
+        self.assertNotIn("Fast parachute", self.patch["strings"])
+        self.assertNotIn("Speed running x3", self.patch["strings"])
 
 
 if __name__ == "__main__":

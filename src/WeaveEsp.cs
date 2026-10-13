@@ -485,40 +485,6 @@ namespace ProjectEspPatch
                 player.Properties.Add(new PropertyDefinition(
                     name, PropertyAttributes.None, getter.ReturnType) { GetMethod = getter });
             }
-            FieldDefinition aimingInfo = player.Fields.Single(value =>
-                value.Name == bindings.FieldName(
-                    "COW.GamePlay.Player", "AKFLHNOIHED"));
-            aimingInfo.Attributes = (aimingInfo.Attributes & ~FieldAttributes.FieldAccessMask)
-                | FieldAttributes.Public;
-            player.Methods.Single(method =>
-                method.Name == "<>iFixBaseProxy_get_IsMovableEntity"
-                && method.Parameters.Count == 0).Name = "EspBaseIsMovableEntity";
-
-            TypeDefinition playerNetwork = module.GetType("COW.GamePlay.PlayerNetwork");
-            playerNetwork.Methods.Single(method =>
-                method.Name == "<>iFixBaseProxy_OnUpdate"
-                && method.Parameters.Count == 2).Name = "EspBaseOnUpdate";
-
-            TypeDefinition attackable = module.GetType("COW.GamePlay.AttackableEntity");
-            attackable.Properties.Single(property => property.SetMethod != null
-                && property.SetMethod.Name == "set_LockedAimingCollider"
-                && property.SetMethod.Parameters.Count == 1).Name = "EspLockedAimingCollider";
-
-            TypeDefinition playerAttributes = module.GetType("COW.GamePlay.PlayerAttributes");
-            foreach (string name in new[] {
-                "SkillScatterRate", "SkillScatterRateSighting"
-            })
-            {
-                if (playerAttributes.Properties.Any(property => property.Name == name)) continue;
-                MethodDefinition getter = playerAttributes.Methods.Single(method =>
-                    method.Name == "get_" + name && method.Parameters.Count == 0);
-                MethodDefinition setter = playerAttributes.Methods.SingleOrDefault(method =>
-                    method.Name == "set_" + name && method.Parameters.Count == 1);
-                playerAttributes.Properties.Add(new PropertyDefinition(
-                    name, PropertyAttributes.None, getter.ReturnType)
-                    { GetMethod = getter, SetMethod = setter });
-            }
-
             TypeDefinition sceneTool = module.GetType("COW.GamePlay.SceneEditBoxSelectTool");
             foreach (string name in new[] {
                 bindings.FieldName("COW.GamePlay.SceneEditBoxSelectTool", "DKNELPFOCHG"),
@@ -569,9 +535,7 @@ namespace ProjectEspPatch
             targetModule = targetAssembly.MainModule;
 
             TypeDefinition player = targetModule.GetType("COW.GamePlay.Player");
-            TypeDefinition playerNetwork = targetModule.GetType("COW.GamePlay.PlayerNetwork");
             TypeDefinition sceneTool = targetModule.GetType("COW.GamePlay.SceneEditBoxSelectTool");
-            TypeDefinition playerAttributes = targetModule.GetType("COW.GamePlay.PlayerAttributes");
             TypeDefinition helperType = helperAssembly.MainModule.GetType("ProjectEspPatch.Logic");
 
             targetMethod = player.Methods.Single(method =>
@@ -592,40 +556,11 @@ namespace ProjectEspPatch
             CloneBody();
             int drawInstructions = targetMethod.Body.Instructions.Count;
 
-            targetMethod = player.Methods.Single(method =>
-                method.Name == "get_LastAimingInfoFromWeapon"
-                && method.Parameters.Count == 0);
-            helperMethod = helperType.Methods.Single(method => method.Name == "SilentAim");
-            CloneBody();
-            int silentAimInstructions = targetMethod.Body.Instructions.Count;
-
-            targetMethod = player.Methods.Single(method =>
-                method.Name == "get_IsMovableEntity" && method.Parameters.Count == 0);
-            helperMethod = helperType.Methods.Single(method => method.Name == "AimSystem");
-            CloneBody();
-            int aimSystemInstructions = targetMethod.Body.Instructions.Count;
-
-            targetMethod = playerNetwork.Methods.Single(method =>
-                method.Name == "OnUpdate" && method.Parameters.Count == 2);
-            helperMethod = helperType.Methods.Single(method =>
-                method.Name == "FastMovementUpdate");
-            CloneBody();
-            int fastMovementInstructions = targetMethod.Body.Instructions.Count;
-
-            targetMethod = playerAttributes.Methods.Single(method =>
-                method.Name == "GetScatterRate" && method.Parameters.Count == 0);
-            helperMethod = helperType.Methods.Single(method => method.Name == "ScatterRate");
-            CloneBody();
-            int scatterInstructions = targetMethod.Body.Instructions.Count;
             targetAssembly.Write(args[2]);
 
             Console.WriteLine("woven=" + args[2]);
             Console.WriteLine("bootstrap_instructions=" + bootstrapInstructions);
             Console.WriteLine("draw_instructions=" + drawInstructions);
-            Console.WriteLine("silent_aim_instructions=" + silentAimInstructions);
-            Console.WriteLine("aim_system_instructions=" + aimSystemInstructions);
-            Console.WriteLine("fast_movement_instructions=" + fastMovementInstructions);
-            Console.WriteLine("scatter_instructions=" + scatterInstructions);
             return 0;
         }
     }

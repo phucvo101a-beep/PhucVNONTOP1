@@ -587,45 +587,5 @@ namespace ProjectEspPatch
             GUI.matrix = savedMatrix;
             GUI.color = savedColor;
         }
-
-        public static CGKJLKPMGDJ SilentAim(Player self)
-        {
-            if (self == null)
-            {
-                return null;
-            }
-            return self.FDMIEDDNCEC;
-        }
-
-        public static bool AimSystem(Player self)
-        {
-            if (self == null)
-            {
-                return false;
-            }
-            try
-            {
-                return self.EspBaseIsMovableEntity();
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        public static void FastMovementUpdate(
-            PlayerNetwork self, float gameTime, float deltaTime)
-        {
-            self.EspBaseOnUpdate(gameTime, deltaTime);
-        }
-
-        public static float ScatterRate(PlayerAttributes self)
-        {
-            if (self == null)
-            {
-                return 0f;
-            }
-            return self.SkillScatterRate;
-        }
     }
 }
